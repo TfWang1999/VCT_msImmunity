@@ -1,0 +1,201 @@
+%% MASTER SCRIPT: main_virtual_trials
+%
+% DESCRIPTION:
+%     Executes in silico clinical trials for 1,000 virtual patients across 
+%     four therapeutic regimens: Xelox, Xelox+IR, Xelox+Anti-PD1, and Triple Therapy.
+%     Utilizes MATLAB Parallel Computing Toolbox for high-throughput simulation.[4, 5]
+%
+% WORKFLOW:
+%     1. Generate LHS parameter matrix for VP cohort.
+%     2. Setup regimen-specific therapy matrices.
+%     3. Parallel execution of multiscale dynamics via 'parfor'.
+%
+
+%---------------------------------------------------------
+
+clear; close all;
+% Setup result directories
+output_root = fullfile(pwd,"VCT_Results");
+if ~exist(output_root, 'dir'), mkdir(output_root); end
+
+dir_path_1 = fullfile(output_root,'VP_Xelox');
+dir_path_2 = fullfile(output_root,'VP_Xelox_IR');
+dir_path_3 = fullfile(output_root,'VP_Xelox_antipd1');
+dir_path_4 = fullfile(output_root,'VP_Xelox_IR_antipd1');
+dir_path = {dir_path_1,dir_path_2,dir_path_3,dir_path_4};
+
+mkdir(string(dir_path(1)));
+mkdir(string(dir_path(2)));
+mkdir(string(dir_path(3)));
+mkdir(string(dir_path(4)));
+%% Generate Virtual Population Cohort
+% Capture population-level heterogeneity
+sample_number = 1000;
+rng(12345); % Global seed for reproducibility
+S = generate_lhs_parameter_matrix(sample_number);
+save(fullfile(output_root, 'VP_LHS_Matrix.mat'), 'S');
+%% Trial Regimens
+regimen_names = {'VP_Xelox', 'VP_Xelox_IR', 'VP_Xelox_AntiPD1', 'VP_Xelox_IR_AntiPD1'};
+therapy_files = {'Therapy_xelox.mat', 'Therapy_xelox_IR.mat', 'Therapy_xelox_antiPD1.mat', 'Therapy_xelox_antiPD1_IR.mat'};
+
+%% 2. Launch In Silico Trials
+% Configure parallel environment (adjust 'number' to available cores)
+delete(gcp('nocreate'));
+parpool(8); 
+
+for reg_idx = 1:4
+    % Load specific therapy scheduling matrix
+    current_regimen = regimen_names{reg_idx};
+    regimen_path = fullfile(output_root, current_regimen);
+    if ~exist(regimen_path, 'dir'), mkdir(regimen_path); end
+    load(therapy_files{reg_idx}); 
+    
+    fprintf('Starting in silico trial: %s\n', current_regimen);
+
+    % Execute simulations in parallel
+    parfor i=1:sample_number
+    disp(i)
+    params = init_global_params(); 
+    par_DNA = params.par_DNA; CY = params.CY; TSM = params.TSM;
+    par_cd4 = params.par_cd4; par_Th = params.par_Th; par_Tr = params.par_Tr;
+    par_Mac = params.par_Mac; par_M1 = params.par_M1; par_M2 = params.par_M2;
+   
+    %% Cancer cell relate parameters===========Equation 1: dC/dt =
+    TSM.r_C = S(i,1);          % proliferation rate of tumor cells
+    TSM.C_max = S(i,2);        % Carrying capacity of tumor cells
+    TSM.eta_h = S(i,3);        % Killing rate of tumor cell by Th
+    TSM.eta_8 = S(i,4);        % Killing rate of tumor cell by T8
+    
+    %% DCs relate parameters===========Equation 2: dD/dt =
+    TSM.lambda_DC = S(i,5);    % Activation rate of DC
+    TSM.D_0 = S(i,6);          % immature dendritic cells
+    TSM.K_DC = S(i,7);         % Half-saturation Michaelis constant of tumor cells
+    
+    %% T8 relate parameters===========Equation 3: dT8/dt =
+    TSM.lambda_T8 = S(i,8);    % Activation rate of CD8 T cell
+    TSM.T80 = S(i,9);          % The number of naive CD8 T cell
+    TSM.T8h = S(i,10);         % Proliferation rate of CD8 T cell
+    
+    %% Th relate parameters===========Equation 4: dTh/dt =
+    TSM.lambda_Th = S(i,11);   % Activation rate of Th cell
+    TSM.Th0 = S(i,12);         % The number of naive CD4 T cell
+    TSM.Thh = S(i,13);         % Proliferation rate of Th cell
+    
+    %% Treg relate parameters===========Equation 4: dTh/dt =
+    TSM.lambda_Tr = S(i,14);   % Activation rate of Treg cell
+    
+    %% TAM relate parameters===========Equation 5/6: dM1(M2)/dt =
+    TSM.lambda_M = S(i,15);    % Reciruitment rate of macrophages
+    TSM.M0 = S(i,16);          % The number of monocytes
+    TSM.K_MC = S(i,17);        % Half-saturation Michaelis constant of tumor cells
+    TSM.sigma1 = S(i,18);      % M1 --> M2 Phenotype change rate
+    TSM.sigma2 = S(i,19);      % M2 --> M1 Phenotype change rate
+    
+    %% CD4 T module parameters %%
+    % IFNg binding and receptor
+    par_cd4.f_1 = S(i,20);     % Tbet produce of Tbet
+    par_cd4.s_I = S(i,21);     % The number of IFNgR on CD4 T cell surface
+    par_cd4.K1 = S(i,22);      % Half-saturation Michaelis constant of IFNg-R
+    % TGFb binding and receptor
+    par_cd4.f_2 = S(i,23);     % FOXP3 produce rate
+    par_cd4.s_T = S(i,24);     % The number of TGFbR on CD4 T cell surface
+    par_cd4.K2 = S(i,25);      % Half-saturation Michaelis constant of TGFb-R
+    
+    %% Th cell function parameters %%
+    par_Th.a_IFNg_0 = S(i,26); % Basline produce rate of IFNg by Th
+    par_Th.a_IL2_0 = S(i,27);  % Basline produce rate of IL2 by Th
+    par_Th.a_TNFa_0 = S(i,28); % Basline produce rate of TNFa by Th
+    par_Th.K_Tb = S(i,29);     % Half-saturation Michaelis constant of Tbet
+    
+    %% Treg cell function parameters %%
+    par_Tr.a_TGFb_0 = S(i,30); % Basline produce rate of TGFb by Tr
+    par_Tr.a_IL10_0 = S(i,31); % Basline produce rate of IL10 by Tr
+    par_Tr.K_FOXP = S(i,32);   % Half-saturation Michaelis constant of FOXP3
+    
+    %% TAM module parameters %% 
+    par_Mac.f_1 = S(i,33);     % The produce rate of pSTAT1   
+    par_Mac.s_I = S(i,34);     % The number of IFNgR on TAM surface
+    par_Mac.K1 = S(i,35);      % Half-saturation Michaelis constant of IFNg-R
+    
+    par_Mac.f_2 = S(i,36);     % The produce rate of NFkB
+    par_Mac.s_T = S(i,37);     % The number of TNFaR on TAM surface
+    par_Mac.K2 = S(i,38);      % Half-saturation Michaelis constant of TNFa-R
+    
+    par_Mac.f_3 = S(i,39);     % The produce rate of pSTAT3
+    par_Mac.s_tgfbr = S(i,40); % The number of TGFbR on TAM surface
+    par_Mac.s_10 = S(i,41);    % The number of IL10R on TAM surface
+    par_Mac.K3 = S(i,42);      % Half-saturation Michaelis constant of IL10-R and TGFb-R
+    
+    %% M1 type TAM secretion parameters %%
+    par_M1.b_IL12_0 = S(i,43); % Baseline produce rate of IL12 by M1
+    par_M1.b_TNFa_0 = S(i,44); % Baseline produce rate of TNFa by M1
+    par_M1.Km1 = S(i,45);      % Half-saturation Michaelis constant of m1
+    
+    %% M2 type TAM secretion parameters %%
+    par_M2.b_IL10_0 = S(i,46); % Baseline produce rate of IL12 by M1
+    par_M2.b_TGFb_0 = S(i,47); % Baseline produce rate of IL12 by M1
+    par_M2.Km2 = S(i,48);      % Half-saturation Michaelis constant of m2
+    
+    %% Anti-PD-1 treatment parameters %%
+    CY.p_1 = S(i,49);          % PD-1 PD-L1 binding rate constant
+    CY.p_8 = S(i,50);          % PD-1 expression rate of T8
+    CY.p_h = S(i,51);          % PD-1 expression rate of Th
+    CY.p_L = S(i,52);          % PD-L1 expression rate
+    CY.K_P = S(i,53);          % The inhibitory constant of PD1-PDL1 complex
+    TSM.epC = S(i,54);         % Amplification coefficient of PD-L1 in tumor cells vs T cell
+    
+    %% Therapy module parameters %%
+    TSM.a = S(i,55);       % LQ model constant for radiotherapy
+    TSM.b = S(i,55)/10;    % LQ model constant for radiotherapy
+
+    par_DNA.d_0 = S(i,56);     % The increased baseline death rate caused by DNA damage
+    par_DNA.lambda_0 = S(i,57);% The reduced baseline growth rate caused by DNA damage
+    par_DNA.lambda_P = S(i,58);% DNA damage coefficient of Oxa
+    par_DNA.lambda_F = S(i,59);% DNA damage coefficient of Cpa
+    par_DNA.rho_F = S(i,60);   % DNA repair inhibition coefficient of 5-FU
+    par_DNA.k_b = S(i,61);     % Repair rate of repair proteins
+    par_DNA.alpha_A = S(i,62); % Activation rate of pro-apoptotic proteins
+    par_DNA.K_A = S(i,63);     % Half-saturation Michaelis constant of pro-apoptotic proteins
+    par_DNA.K_D = S(i,64);     % Half-saturation Michaelis constant of DNA damage sites
+    
+    %% Other treatment parameters %%
+    CY.A = S(i,65);            % The concentration of anti-PD1
+    CY.p_2 = S(i,66);          % The binding constant of anti-PD1 and PD1
+    
+    %% Extracellular scale parameters %%
+    CY.K_IL12 = S(i,67);       % Half-saturation Michaelis constant of IL12
+    CY.K_IL2 = S(i,68);        % Half-saturation Michaelis constant of IL2
+    CY.K_IL10 = S(i,69);       % Half-saturation Michaelis constant of IL10
+    CY.K_IFNg = S(i,70);       % Half-saturation Michaelis constant of IFNg
+    CY.K_TNFa = S(i,71);       % Half-saturation Michaelis constant of TNFa
+    CY.K_TGFb = S(i,72);       % Half-saturation Michaelis constant of TGFb
+    
+    CY.lambda_DC_IL12 = S(i,73); % Produce rate of IL12 by DC
+    CY.lambda_C_TGFb = S(i,74);  % Produce rate of TGFb by tumor cell
+    CY.lambda_C_IL10 = S(i,75);  % Produce rate of IL10 by tumor cell
+    CY.lambda_T8_IFNg = S(i,76); % Produce rate of IFNg by CD8 T cell
+    % update parameters
+    params.par_DNA = par_DNA ; params.CY = CY ; params.par_cd4 = par_cd4 ;
+    params.par_Th = par_Th ; params.par_Tr = par_Tr ; params.par_Mac = par_Mac ;
+    params.par_M1 = par_M1 ; params.par_M2 = par_M2 ; params.TSM = TSM;
+    
+    execute_vp_simulation_task(i,params,Therapy_martix,dir_path{reg_idx});
+    end
+end
+
+%% --- HELPER FUNCTIONS ---
+
+function execute_vp_simulation_task(i,params,Therapy_martix,VP_path)
+
+exp_data=initialize_experiment_conditions(Therapy_martix,params);
+% [par_DNA,CY,par_cd4, par_Th, par_Tr, par_Mac, par_M1, par_M2, TSM] = init_global_params();
+
+
+[x.t_sol, x.Vtumor_list,x.Y_sol,x.Y_sol_number,x.params] = run_simulation(exp_data,params);
+
+
+file=fullfile(VP_path,['VP',num2str(i),'.mat']);
+
+save(file,'x');
+
+end
