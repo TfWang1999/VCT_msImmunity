@@ -1,4 +1,14 @@
 function [Score_matrix,Par_matrix] = Quantify(params,Therapy_martix)
+% Quantify - Calculates immune score metrics (msImmunity, tsImmunity, molsImmunity) based on a multi-scale mathematical model
+%
+%
+% Input:
+% params: A structure containing global parameters, DNA damage parameters, and cytokine parameters
+% Therapy_martix: A treatment protocol matrix recording the dose and duration of radiotherapy (RT) and chemotherapy (Chem)
+%
+% Output:
+% Score_matrix: A three-level score matrix [msImmunity, tsImmunity, molsImmunity]
+% Par_matrix: A dimensionless parameter matrix after scale adjustment
 
 
 [Dim_TSM,params] = calculate_multiscale_scaling(1,params);
@@ -182,4 +192,5 @@ function M_pro = M_pro(x)
 end
 function M_sup = M_sup(x)
     M_sup = 1/(1+x);
+
 end
