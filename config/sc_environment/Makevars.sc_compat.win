@@ -1,0 +1,6 @@
+# Preserve server-era MASS/nnet/survival when rebuilding under R 4.4.
+# GNU make runs from the package's src directory during R CMD INSTALL.
+SC_LEGACY_PACKAGE := $(notdir $(abspath ..))
+ifneq ($(filter MASS nnet survival,$(SC_LEGACY_PACKAGE)),)
+PKG_CPPFLAGS += -DSint=int -DSfloat=double
+endif

@@ -1,0 +1,19 @@
+function experimental_data = build_virtual_patient_experiment(therapy_matrix, params, initial_tumor_fraction)
+%BUILD_VIRTUAL_PATIENT_EXPERIMENT Create deterministic VCT initial conditions.
+% Cohort generation supplies a reproducible patient-specific C0/Cmax ratio.
+
+if nargin < 3 || isempty(initial_tumor_fraction)
+    error('build_virtual_patient_experiment:MissingFraction', ...
+        'A patient-specific initial_tumor_fraction is required.');
+end
+if initial_tumor_fraction <= 0 || initial_tumor_fraction >= 1
+    error('build_virtual_patient_experiment:Fraction', ...
+        'initial_tumor_fraction must lie strictly between zero and one.');
+end
+
+experimental_data = struct( ...
+    'Y0', [params.TSM.C_max * initial_tumor_fraction, repmat(1e6, 1, 6)], ...
+    't', 0:1:max(therapy_matrix(:,1)), ...
+    'Therapy', therapy_matrix(:,2:5), ...
+    'Volume', []);
+end

@@ -1,0 +1,13 @@
+score,regimen,auc,cohort_size,responder_count,response_rate
+msImmunity,Xelox,0.998313090418354,1000,12,0.012
+tsImmunity,Xelox,0.757000674763833,1000,12,0.012
+molsImmunity,Xelox,0.801366396761134,1000,12,0.012
+msImmunity,Xelox + RT,0.993229369720598,1000,190,0.19
+tsImmunity,Xelox + RT,0.694009096816115,1000,190,0.19
+molsImmunity,Xelox + RT,0.774509421702404,1000,190,0.19
+msImmunity,Xelox + anti-PD-1,0.920525896284729,1000,436,0.436
+tsImmunity,Xelox + anti-PD-1,0.679326078469647,1000,436,0.436
+molsImmunity,Xelox + anti-PD-1,0.702603455006832,1000,436,0.436
+msImmunity,Xelox + RT + anti-PD-1,0.937900906879009,1000,726,0.726
+tsImmunity,Xelox + RT + anti-PD-1,0.685724196175424,1000,726,0.726
+molsImmunity,Xelox + RT + anti-PD-1,0.715579819428525,1000,726,0.726

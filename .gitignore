@@ -1,0 +1,28 @@
+# Local trajectories and optimization trials
+/analysis/VCT_analysis/results/cohort/
+/analysis/*/results/refit_*
+
+# CRC calibration observations and the MAT file containing them
+/analysis/CRC_fit/input_data/patient_all.mat
+/analysis/CRC_fit/results/crc_results.mat
+
+# Large processed inputs supplied separately
+/sc_analysis/GO_enrichment/input_data/CRC_Treatment_I.rds
+/Liver_cancer/input_data/seurat_all.rds
+/Liver_cancer/input_data/Sce_filter_new.rds
+
+# Local MATLAB and R state
+*.asv
+*.m~
+*.log
+.DS_Store
+.Rproj.user/
+.Rhistory
+.RData
+**/renv/library/
+**/renv/cache/
+**/renv/local/
+**/renv/sandbox/
+**/renv/staging/
+R_env_cache/
+

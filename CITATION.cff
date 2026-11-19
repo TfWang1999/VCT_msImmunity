@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this model or code, please cite the associated manuscript."
+title: "VCT-msImmunity: multiscale tumor-immune model and virtual clinical trials"
+type: software
+authors:
+  - family-names: Wang
+    given-names: T.
+repository-code: "https://github.com/TfWang1999/VCT_msImmunity"
+version: 0.1.0-revision
+date-released: 2026-08-17
