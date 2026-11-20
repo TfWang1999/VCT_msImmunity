@@ -17,11 +17,12 @@ MATLAB 使用 R2025a，统计计算需要 Statistics and Machine Learning Toolbo
 
 ## 单独提供的输入
 
-| 本地路径 | 获取方式 |
+从 Zenodo 下载 [processed_single_cell_inputs.zip](https://zenodo.org/records/23828850/files/processed_single_cell_inputs.zip?download=1)（约 1.59 GB），解压到仓库根目录（与本 README 同级）并保留压缩包内的目录结构。 [Zenodo 数据记录](https://doi.org/10.5281/zenodo.23828850)
+
+| 文件 | 放置路径（相对于仓库根目录） |
 | --- | --- |
-| `analysis/CRC_fit/input_data/patient_all.mat` | 向通讯作者申请去标识化临床观测 |
-| `sc_analysis/GO_enrichment/input_data/CRC_Treatment_I.rds` | 获取已处理的 GSE236581 CRC 表达对象后放到此路径 |
-| `Liver_cancer/input_data/seurat_all.rds`、`Liver_cancer/input_data/Sce_filter_new.rds` | 获取已处理的肝癌表达和细胞注释对象后放到对应路径 |
+| `CRC_Treatment_I.rds` | `sc_analysis/GO_enrichment/input_data/CRC_Treatment_I.rds` |
+| `seurat_all.rds` | `Liver_cancer/input_data/seurat_all.rds` |
+| `Sce_filter_new.rds` | `Liver_cancer/input_data/Sce_filter_new.rds` |
 
-以上文件用于从观测或表达数据重算。图 3 的 `results/crc_results.mat` 随 CRC 计算生成，其中含临床观测值。
-
+CRC 拟合需要去标识化临床观测 `analysis/CRC_fit/input_data/patient_all.mat`，可向通讯作者申请。图 3 的 `results/crc_results.mat` 随 CRC 计算生成，其中含临床观测值。
